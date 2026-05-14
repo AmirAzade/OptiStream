@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>OptiStream — Visual Optical Data Transfer</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <span class="brand-name">OptiStream</span>
+      </div>
+
+      <nav class="mode-pill" role="tablist" aria-label="Mode">
+        <button id="tab-sender" class="mode-btn active" role="tab" aria-selected="true">Sender</button>
+        <button id="tab-receiver" class="mode-btn" role="tab" aria-selected="false">Receiver</button>
+      </nav>
+    </div>
+  </header>
+
+  <div id="secure-context-banner" class="alert-banner hidden" role="alert">
+    Camera &amp; Web Crypto require <code>https://</code> or <code>localhost</code>.
+  </div>
+
+  <main class="studio">
+    <!-- ==================== SENDER VIEW ==================== -->
+    <section id="view-sender" class="view-panel active" aria-labelledby="tab-sender">
+      <div class="sender-grid">
+        <!-- Left Open Control Rail (Always Visible, Zero Hidden Menus) -->
+        <aside class="control-rail">
+          <!-- Payload -->
+          <div id="tx-payload-panel" class="panel">
+            <div class="panel-row">
+              <div class="seg-tabs">
+                <button id="payload-tab-file" class="seg-tab active" type="button">File</button>
+                <button id="payload-tab-text" class="seg-tab" type="button">Text</button>
+              </div>
+              <span id="sender-chunks-stat" class="chip">0 pkts</span>
+            </div>
+
+            <div id="input-panel-file">
+              <label for="file-input" class="drop-box">
+                <input id="file-input" type="file" hidden />
+                <strong>Drop file or browse</strong>
+                <span id="selected-file-info" class="muted-xs">No file selected</span>
+              </label>
+            </div>
+
+            <div id="input-panel-text" class="hidden">
+              <textarea id="text-payload-input" rows="2" placeholder="Type or paste UTF-8 text..."></textarea>
+            </div>
+
+            <div class="inline-row">
+              <input id="sender-password" type="password" autocomplete="new-password" placeholder="Optional AES-GCM password" />
+              <button id="toggle-sender-pw" class="btn btn-ghost btn-sm" type="button">Show</button>
+            </div>
+
+            <div class="checks-row">
+              <label class="check-pill"><input id="opt-compress" type="checkbox" checked /><span>Deflate</span></label>
+              <label class="check-pill"><input id="opt-fountain" type="checkbox" checked /><span>Fountain LT</span></label>
+              <label class="check-pill"><input id="opt-rs-fec" type="checkbox" checked /><span>RS FEC</span></label>
+            </div>
+          </div>
+
+          <!-- Optical Settings -->
+          <div id="tx-settings-panel" class="panel">
+            <div class="preset-row">
+              <button class="preset-btn" data-fps="12" data-density="24" data-color="1bit" type="button">Long Range</button>
+              <button class="preset-btn active" data-fps="15" data-density="32" data-color="2bit" type="button">Balanced</button>
+              <button class="preset-btn" data-fps="24" data-density="40" data-color="2bit" type="button">Turbo</button>
+            </div>
+
+            <div class="tune-slider">
+              <div class="tune-label"><span>FPS</span><strong id="val-fps">15 FPS</strong></div>
+              <input id="slider-fps" type="range" min="5" max="30" step="1" value="15" />
+            </div>
+
+            <div class="tune-slider">
+              <div class="tune-label"><span>Grid</span><strong id="val-density">32 &times; 32</strong></div>
+              <input id="slider-density" type="range" min="24" max="48" step="4" value="32" />
+            </div>
+
+            <div class="radio-pills radio-pills-3">
+              <label class="radio-pill"><input type="radio" name="color-mode" value="1bit" /><span>1-bit</span></label>
+              <label class="radio-pill"><input type="radio" name="color-mode" value="2bit" checked /><span>2-bit</span></label>
+              <label class="radio-pill"><input type="radio" name="color-mode" value="3bit" /><span>3-bit (8C)</span></label>
+            </div>
+
+            <div class="tune-stats">
+              <span id="sender-size-stat">—</span>
+              <span>&middot;</span>
+              <span id="sender-cap-stat">189 B/f</span>
+              <span>&middot;</span>
+              <span id="sender-rate-stat">—</span>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Right Optical Stage -->
+        <div id="sender-stage-card" class="stage-panel">
+          <div class="stage-topbar">
+            <div class="chip-group">
+              <span id="sender-session-badge" class="chip chip-blue">Session —</span>
+              <span id="sender-frame-badge" class="chip">Idle</span>
+              <span id="sender-cycle-badge" class="chip hidden">Cycle 0</span>
+              <span id="sender-actual-fps" class="chip">0 FPS</span>
+            </div>
+            <button id="btn-fullscreen-canvas" class="icon-btn" type="button" title="Fullscreen">&#x26F6;</button>
+          </div>
+
+          <div id="file-dropzone" class="matrix-stage">
+            <div class="canvas-frame">
+              <canvas id="tx-canvas" width="720" height="720" aria-label="Optical matrix"></canvas>
+            </div>
+          </div>
+
+          <div class="stage-actions-bar">
+            <div class="action-row">
+              <button id="btn-start-pause" class="btn btn-primary" type="button">Start</button>
+              <button id="btn-step" class="btn btn-soft" type="button">Step</button>
+              <button id="btn-benchmark-sender" class="btn btn-soft" type="button" title="Run 16s multi-profile optical speed benchmark">Benchmark</button>
+              <button id="btn-reset-sender" class="btn btn-ghost" type="button">Reset</button>
+            </div>
+            <p id="sender-error" class="error-inline hidden"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== RECEIVER VIEW ==================== -->
+    <section id="view-receiver" class="view-panel hidden" aria-labelledby="tab-receiver">
+      <div class="receiver-grid">
+        <!-- Camera Stage -->
+        <div class="rx-camera-panel">
+          <div class="rx-toolbar">
+            <div class="chip-group">
+              <button id="btn-toggle-camera" class="btn btn-primary btn-sm" type="button">Start Camera</button>
+              <button id="btn-reset-receiver" class="btn btn-ghost btn-sm" type="button">Clear</button>
+              <select id="camera-select" aria-label="Select camera">
+                <option value="">Default Camera</option>
+              </select>
+              <label class="check-pill" title="Track 4 corners in small ROI boxes for 3-4x faster decoding">
+                <input id="opt-rx-fast-roi" type="checkbox" checked />
+                <span>Fast ROI</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="viewfinder-wrap">
+            <video id="rx-video" playsinline muted autoplay></video>
+            <canvas id="rx-overlay" aria-hidden="true"></canvas>
+            <div id="rx-status-pill" class="rx-status-pill">Tap Start Camera to scan</div>
+            <button id="btn-rx-mirror" class="rx-mirror-btn" type="button" aria-pressed="false" title="Flip camera horizontally">
+              &#8646; Mirror
+            </button>
+
+            <!-- Auto-closed Camera Completion / Decrypt Overlay -->
+            <div id="rx-modal-backdrop" class="rx-complete-overlay hidden">
+              <div id="rx-decrypt-card" class="complete-sheet hidden">
+                <div class="complete-badge badge-amber">&#128274; Encrypted Payload</div>
+                <h2>Enter Password</h2>
+                <p class="muted-sm">All packets verified and camera closed. Enter the AES-GCM password to unlock.</p>
+                <div class="decrypt-row">
+                  <input id="rx-password-input" type="password" placeholder="Transfer password" />
+                  <button id="btn-rx-decrypt" class="btn btn-primary" type="button">Unlock</button>
+                </div>
+                <p id="rx-decrypt-error" class="error-inline hidden"></p>
+              </div>
+
+              <div id="rx-complete-card" class="complete-sheet hidden">
+                <div class="complete-badge badge-green">&#10003; Transfer Complete · Camera Closed</div>
+                <h2 id="rx-complete-filename">received-file.bin</h2>
+                <p id="rx-complete-details" class="muted-sm"></p>
+                <div id="rx-complete-stats" class="complete-stats"></div>
+
+                <div id="rx-text-preview-wrap" class="text-preview-wrap hidden">
+                  <div class="text-preview-header">
+                    <span>Decoded Text</span>
+                    <button id="btn-copy-text" class="btn btn-ghost btn-sm" type="button">Copy</button>
+                  </div>
+                  <pre id="rx-text-preview" class="text-preview"></pre>
+                </div>
+
+                <div class="complete-actions">
+                  <button id="btn-download-file" class="btn btn-primary" type="button">Download File</button>
+                  <button id="btn-scan-another" class="btn btn-soft" type="button">Scan Another</button>
+                </div>
+              </div>
+
+              <div id="rx-benchmark-card" class="complete-sheet hidden">
+                <div class="complete-badge badge-green">&#9889; Optical Benchmark Report</div>
+                <h2 id="rx-bench-winner">Best Settings</h2>
+                <p id="rx-bench-summary" class="muted-sm"></p>
+                <div class="bench-table-wrap">
+                  <table class="bench-table">
+                    <thead>
+                      <tr><th>Profile</th><th>Speed</th><th>Drop</th></tr>
+                    </thead>
+                    <tbody id="rx-bench-tbody"></tbody>
+                  </table>
+                </div>
+                <div class="complete-actions">
+                  <button id="btn-bench-scan-again" class="btn btn-primary" type="button">Close &amp; Scan</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p id="receiver-error" class="error-inline hidden"></p>
+        </div>
+
+        <!-- Right Telemetry & Always-Visible Packet Grid -->
+        <aside class="rx-side-panel">
+          <div class="panel">
+            <div class="chip-group">
+              <span id="rx-session-badge" class="chip chip-blue">Session —</span>
+              <span id="rx-format-badge" class="chip">Auto</span>
+              <span id="rx-security-badge" class="chip hidden"></span>
+            </div>
+
+            <div class="rx-stats-grid">
+              <div class="stat-box"><strong id="rx-received-count">0 / 0</strong><span>Packets</span></div>
+              <div class="stat-box"><strong id="rx-speed">0.0 KB/s</strong><span>Speed</span></div>
+              <div class="stat-box"><strong id="rx-drop-rate">0.0%</strong><span>Drop</span></div>
+            </div>
+
+            <div class="rx-progress-track">
+              <div id="rx-progress-fill" class="rx-progress-fill" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <div class="panel rx-grid-panel">
+            <div class="panel-row">
+              <strong>Packets</strong>
+              <span id="rx-file-preview-meta" class="muted-xs">Waiting for lock...</span>
+            </div>
+            <div id="packet-matrix" class="packet-matrix rx-matrix-fill" aria-live="polite">
+              <p class="muted-xs">Packets appear here once decoded.</p>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
